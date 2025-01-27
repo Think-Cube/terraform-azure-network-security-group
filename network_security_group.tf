@@ -1,29 +1,26 @@
 resource "azurerm_network_security_group" "main" {
-  name                = "${var.environment}-${var.network_security_group_name}-${var.region}-nsg"
-  location            = data.azurerm_resource_group.rg.location
+  name                = "${var.environment}-${var.nsg_name}-${var.region}-nsg"
   resource_group_name = data.azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
   tags                = var.default_tags
-
-  timeouts {
-    create = "5m"
-    delete = "10m"
+  dynamic "security_rule" {
+    for_each = var.security_rules
+    content {
+      name                                       = lookup(security_rule.value, "name", null)
+      priority                                   = lookup(security_rule.value, "priority", null)
+      direction                                  = lookup(security_rule.value, "direction", null)
+      access                                     = lookup(security_rule.value, "access", null)
+      protocol                                   = lookup(security_rule.value, "protocol", null)
+      source_port_range                          = lookup(security_rule.value, "source_port_range", null)
+      source_port_ranges                         = lookup(security_rule.value, "source_port_ranges", null)
+      destination_port_range                     = lookup(security_rule.value, "destination_port_range", null)
+      destination_port_ranges                    = lookup(security_rule.value, "destination_port_ranges", null)
+      source_address_prefix                      = lookup(security_rule.value, "source_address_prefix", null)
+      source_address_prefixes                    = lookup(security_rule.value, "source_address_prefixes", null)
+      destination_address_prefix                 = lookup(security_rule.value, "destination_address_prefix", null)
+      destination_address_prefixes               = lookup(security_rule.value, "destination_address_prefixes", null)
+      source_application_security_group_ids      = lookup(security_rule.value, "source_application_security_group_ids ", null)
+      destination_application_security_group_ids = lookup(security_rule.value, "destination_application_security_group_ids ", null)
+    }
   }
-}
-
-resource "azurerm_network_security_rule" "main" {
-  for_each = var.network_security_group_list
-
-  name                        = each.key
-  priority                    = each.value.priority
-  direction                   = each.value.direction
-  access                      = each.value.access
-  protocol                    = each.value.protocol
-  source_port_range           = each.value.source_port_range
-  destination_port_range      = each.value.destination_port_range
-  source_address_prefix       = each.value.source_address_prefix
-  destination_address_prefix  = each.value.destination_address_prefix
-  resource_group_name         = data.azurerm_resource_group.rg.name
-  network_security_group_name = azurerm_network_security_group.main.name
-
-  depends_on = [azurerm_network_security_group.main]
 }
